@@ -1,6 +1,15 @@
 ---
+- name: Register current java version
+  shell: java -version 2>&1 | grep version | awk '{print $3}' | sed 's/"//g'
+  register: java_version_command
+  changed_when: False
+
+- set_fact:
+    java_version: "{{ '0.0.0' if java_version_command.stdout == '' else  java_version_command.stdout }}"
+
 - name: Install OpenJDK
-  apt: name=openjdk-7-jre-headless state=present
+  apt: name=openjdk-7-jre-headless state=present update_cache=yes
+  when: java_version | version_compare('1.7.0', '<')
 
 - name: Fetch kafka binary package
   get_url: dest="{{ kafka_tarball_location }}/{{ kafka_tarball_name }}" url="{{apache_mirror}}/kafka/{{kafka_version}}/{{kafka_tarball_name}}"
